@@ -24,13 +24,23 @@ rl.on('line', (line) => {
   let type = words[0].toUpperCase();
 
   // Send the type and the HTTP request
-  if (type == 'SEND')
-    client.write(JSON.stringify({
-      type: type,
-      httpRequest: 'THis is an HTTP request',
-      timeout: '1000'
-    }));
-
+  if (type == 'SEND') {
+    let url = words[2]
+    let method = words[1]
+    let data = words[3]
+    // Check the amount of arguments is correct
+    if (url != null || method != null) {
+      client.write(JSON.stringify({
+        type,
+        url,
+        method,
+        data,
+        timeout: '1000'
+      }));
+    } else {
+      console.log("Wrong arguments")
+    }
+  }
   // Send the type and the token for authentication
   else if (type == 'AUTH') {
     let token = words[1]

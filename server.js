@@ -50,10 +50,12 @@ class User {
 
       // Make proxy request
       if (type == "SEND") {
-
         // Send back success payload if user is authenticated
         if (this.isAuthenticated) {
-          axios({ method: 'get', url: "https://google.com" }).then(function (response) {
+          var url = message.url;
+          var method = message.method.toLowerCase();
+          var data = message.data;
+          axios({ method, url, data }).then(function (response) {
 
             socket.write(JSON.stringify({
               success: 'true',

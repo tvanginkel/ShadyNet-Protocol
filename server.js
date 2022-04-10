@@ -21,6 +21,7 @@
 //     
 
 const net = require('net');
+const axios = require('axios');
 
 const server = net.createServer((socket) => {
   // Manage the connection from a user
@@ -47,26 +48,35 @@ class User {
       let type = message.type.toUpperCase();
       console.log('Message: ', message);
 
-      // When the request is send 
+      // Make proxy request
       if (type == "SEND") {
+
+        // Send back success payload if user is authenticated
         if (this.isAuthenticated) {
-          try {
+          axios({ method: 'get', url: "https://google.com" }).then(function (response) {
+
             socket.write(JSON.stringify({
               success: 'true',
               payload: {
-                message: 'Congrats this worked',
+                //data: response.data,
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers,
+                config: response.config,
+                request: response.requet
               }
             }))
-          }
-          catch (e) {
-            socket.write(JSON.stringify({
-              success: 'false',
-              payload: {
-                message: e,
-              }
-            }))
-          }
+          })
+            .catch(function (error) {
+              socket.write(JSON.stringify({
+                success: 'false',
+                error: error
+              }))
+            })
+
         }
+
+        // Send back error saying user is not authenticated
         else {
           socket.write(JSON.stringify({
             success: 'false',
@@ -75,7 +85,6 @@ class User {
             }
           }))
         }
-
       }
 
       // Close the socket connection
@@ -85,16 +94,29 @@ class User {
 
       // Authenticate the user
       else if (type == "AUTH") {
-        this.isAuthenticated = true;
-        socket.write(JSON.stringify({
-          success: 'true',
-          payload: {
-            message: 'User autenticated',
-          }
-        }))
+
+        // If the arguments are not right send back an error
+        if (message.token == null) {
+          socket.write(JSON.stringify({
+            success: 'false',
+            payload: {
+              message: 'Invalid token',
+            }
+          }))
+        }
+        // Authenticate the user
+        else {
+          this.isAuthenticated = true;
+          socket.write(JSON.stringify({
+            success: 'true',
+            payload: {
+              message: 'User autenticated',
+            }
+          }))
+        }
       }
 
-      // Send back 400 response 
+      // Send back UNKNOWN COMMAND error
       else {
         socket.write(JSON.stringify({
           success: 'false',

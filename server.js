@@ -52,9 +52,9 @@ class User {
       if (type == "SEND") {
         // Send back success payload if user is authenticated
         if (this.isAuthenticated) {
-          var url = message.url;
-          var method = message.method.toLowerCase();
-          var data = message.data;
+          var url = message.body.url;
+          var method = message.body.method.toLowerCase();
+          var data = message.body.queryParameters;
           axios({ method, url, data }).then(function (response) {
 
             socket.write(JSON.stringify({

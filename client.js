@@ -25,25 +25,38 @@ rl.on('line', (line) => {
 
   // Send the type and the HTTP request
   if (type == 'SEND') {
-    let url = words[2]
+
+    // Get arguments from command
     let method = words[1]
-    let data = words[3]
+    let url = words[2]
+    let queryParameters = null;
+    if (!isEmpty(words[3]))
+      queryParameters = JSON.parse(words[3]);
+
+    //console.log(queryParameters)
+
     // Check the amount of arguments is correct
-    if (url != null || method != null) {
+    if (!isEmpty(url) || !isEmpty(method)) {
       client.write(JSON.stringify({
         type,
-        url,
-        method,
-        data,
+        body: {
+          url,
+          method,
+          queryParameters,
+        },
         timeout: '1000'
       }));
     } else {
       console.log("Wrong arguments")
     }
   }
+
   // Send the type and the token for authentication
   else if (type == 'AUTH') {
+
+    // Get arguments
     let token = words[1]
+
     // Check the amount of arguments is correct
     if (token != null) {
       client.write(JSON.stringify({
@@ -69,3 +82,7 @@ rl.on('line', (line) => {
 rl.on('close', () => {
   client.end();
 });
+
+function isEmpty(str) {
+  return (!str || str.length === 0);
+}

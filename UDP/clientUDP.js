@@ -1,12 +1,29 @@
-var udp = require('dgram')
+var udp = require('dgram');
 const readline = require('readline');
 const { v4: uuidv4 } = require('uuid');
 
 var client = udp.createSocket('udp4');
 
+var isWaitingAcknowledgment = true;
+
+
 client.on('message', function (msg, info) {
-    console.log(JSON.parse(msg.toString()))
+    message = JSON.parse(msg.toString())
     console.log('Received %d bytes from %s:%d\n', msg.length, info.address, info.port);
+
+    if (isWaitingAcknowledgment) {
+        if (message.status == 201) {
+            console.log(message)
+            console.log('Acknowledgement received\n')
+            isWaitingAcknowledgment = false;
+        }
+        else {
+            console.log("Could not get server acknowledgment")
+        }
+    }
+    else {
+        console.log(message)
+    }
 });
 
 // Read line from console
@@ -15,6 +32,8 @@ console.log("Start typing")
 
 // When pressing enter send message to server
 rl.on('line', (line) => {
+
+    isWaitingAcknowledgment = true;
 
     // Split the message in words
     let words = line.split(" ");

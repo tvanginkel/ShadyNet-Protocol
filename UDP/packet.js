@@ -1,3 +1,6 @@
+var CryptoJS = require("crypto-js");
+var clc = require('cli-color');
+
 class SnpPacket {
     constructor(id, packetNumber, totalPackets, payloadData) {
         this.id = id;
@@ -22,20 +25,36 @@ class SnpPacket {
         this.payloadData = json.payloadData
     }
 
-    fromBytes(buffer) {
-        let packet = buffer.toString();
+    static fromBytes(buffer) {
+
+        console.log(clc.yellow("Decrypting data..."))
+
+        // Decrypt
+        var bytes = CryptoJS.AES.decrypt(buffer.toString(), 'snp');
+        var originalText = bytes.toString(CryptoJS.enc.Utf8);
+        // console.log(clc.yellow(originalText))
         try {
-            let json = JSON.parse(packet);
-            this.fromJSON(json);
+            let json = JSON.parse(originalText);
+            return {
+                id: json.id,
+                packetNumber: json.packetNumber,
+                totalPackets: json.totalPackets,
+                payloadData: json.payloadData
+            };
         } catch (error) {
             console.log(error);
         }
     }
 
     toBytes() {
-        // this.payloadData = this.payloadData.toString()
+
+
+        // Encrypt
         let strJSON = JSON.stringify(this.toJson())
-        return Buffer.from(strJSON);
+        console.log(clc.blue("Encrypting data..."))
+        var ciphertext = CryptoJS.AES.encrypt(strJSON, 'snp').toString();
+        // console.log(clc.blue(ciphertext), '\n')
+        return Buffer.from(ciphertext);
     }
 }
 

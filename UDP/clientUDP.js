@@ -4,9 +4,10 @@ const { v4: uuidv4 } = require('uuid');
 var clc = require('cli-color');
 const SnpPacket = require('./packet')
 
-var port = 1502;
-var port = 7788;
+// var port = 1502;
 // var address = '192.168.0.176';
+var port = 7788;
+// var address = '192.168.0.192';
 var address = 'localhost';
 class ClientUDP {
     constructor() {
@@ -15,7 +16,7 @@ class ClientUDP {
 
         this.client.on('message', (msg, info) => {
             try {
-                var packet = JSON.parse(msg.toString())
+                var packet = SnpPacket.fromBytes(msg.toString());
                 let message = new TextDecoder().decode(new Uint8Array(packet.payloadData))
                 packet.payloadData = message;
                 // If it is a single packet and we are not expecting any more then just print the result
@@ -188,6 +189,7 @@ class ClientUDP {
 
             for (let i = 0; i < chunks.length; i++) {
                 let snpPacket = new SnpPacket(id, i + 1, chunks.length, chunks[i].toJSON().data)
+
                 this.client.send(snpPacket.toBytes(), port, address, function (error) {
                     if (error) {
                         console.log(clc.red(error));
@@ -199,7 +201,7 @@ class ClientUDP {
             this.client.on('message', (msg, info) => {
                 try {
                     //Get the packet and parse it to JSON
-                    var packet = JSON.parse(msg.toString())
+                    var packet = SnpPacket.fromBytes(msg.toString());
 
                     // Decode the payload to string
                     let message = new TextDecoder().decode(new Uint8Array(packet.payloadData));

@@ -1,10 +1,12 @@
+var CryptoJS = require("crypto-js");
 
-console.log(Math.ceil(30 / 14))
+var ciphertext = CryptoJS.AES.encrypt(JSON.stringify({ toni: 'hello' }), 'snp').toString();
 
-let string = "{Hello:wow}"
+var buffer = Buffer.from(ciphertext)
 
-let json = { id: 1, payload: { msg: string } }
 
-let strJSON = JSON.stringify(json)
+// Decrypt
+var bytes = CryptoJS.AES.decrypt(buffer.toString(), 'snp');
+var originalText = bytes.toString(CryptoJS.enc.Utf8);
+console.log(originalText);
 
-console.log(JSON.parse(strJSON));

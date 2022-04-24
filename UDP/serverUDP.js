@@ -2,6 +2,11 @@ const dgram = require('dgram');
 const axios = require('axios');
 const Request = require('./requests');
 const SnpPacket = require('./packet')
+var clc = require('cli-color');
+
+var port = 7788;
+var ip = 'localhost';
+// var ip = '192.168.0.192';
 
 function sendMessage(msg, port, address, server) {
 
@@ -49,7 +54,7 @@ class ServerUDP {
         this.server = dgram.createSocket('udp4');
 
         // Bind socket to port 7788
-        this.server.bind(7788);
+        this.server.bind(port, ip);
 
         this.server.on('listening', async () => {
             const address = this.server.address();
@@ -59,7 +64,6 @@ class ServerUDP {
 
         // When the servers get a message from  a client
         this.server.on('message', (msg, info) => {
-
             let request = this.managePacket(msg)
 
             // If all the packets of the request have been received then handle the request
@@ -67,13 +71,12 @@ class ServerUDP {
                 request = new Request(request, info);
 
                 console.log(request);
-
                 // Push this request to the end of the queue
                 this.queue.push(request);
 
                 sendMessage(JSON.stringify({
                     id: request.id,
-                    success: 'true',
+                    success: true,
                     status: 201,
                     payload: {
                         queue: this.queue.indexOf(request)
@@ -137,43 +140,43 @@ class ServerUDP {
                 var data = message.body.queryParameters;
 
                 try {
-                    let response = await axios({ method, url, data })
+                    let response = await axios({ method, url, data });
+
                     sendMessage(JSON.stringify({
                         id: message.id,
-                        success: 'true',
+                        success: true,
                         status: 200,
                         payload: {
                             content: {
-                                headers: response.headers,
-                                config: response.config,
-                                request: response.requet,
-                                data: response.data
-                            },
-                            requests: requestsLeft
+                                response: {
+                                    headers: response.headers,
+                                    config: response.config,
+                                    request: response.requet,
+                                    data: response.data
+                                },
+                                requests: requestsLeft
+                            }
                         }
                     }), request.port, request.address, this.server)
 
                 } catch (error) {
                     sendMessage(JSON.stringify({
                         id: message.id,
-                        success: 'false',
-                        status: 400,
+                        success: false,
+                        status: 405,
                         payload: {
-                            error: 'BAD_REQUEST',
-                            message: 'Incorrect properties in request',
+                            error: 'INTERNAL_ERROR',
+                            message: 'Internal error',
                         },
                     }), request.port, request.address, this.server)
                 }
-
-
-
             }
 
             // Send back error saying user is not authenticated
             else {
                 sendMessage(JSON.stringify({
                     id: message.id,
-                    success: 'false',
+                    success: false,
                     status: 403,
                     payload: {
                         error: 'UNAUTHORIZED',
@@ -197,7 +200,7 @@ class ServerUDP {
             if (message.body.token == null) {
                 sendMessage(JSON.stringify({
                     id: message.id,
-                    success: 'false',
+                    success: false,
                     status: 400,
                     payload: {
                         error: 'BAD_REQUEST',
@@ -210,12 +213,13 @@ class ServerUDP {
                 this.isAuthenticated = true;
                 if (!this.authenticatedIPS.includes(request.address))
                     this.authenticatedIPS.push(request.address);
+
                 if (this.unAuthenticatedIPs.has(request.address))
                     this.unAuthenticatedIPs.delete(request.address);
 
                 sendMessage(JSON.stringify({
                     id: message.id,
-                    success: 'true',
+                    success: true,
                     status: 200,
                     payload: {
                         message: 'Authentication successful',
@@ -228,7 +232,7 @@ class ServerUDP {
         else {
             sendMessage(JSON.stringify({
                 id: message.id,
-                success: 'false',
+                success: false,
                 status: 400,
                 payload: {
                     error: 'BAD_REQUEST',
@@ -250,7 +254,8 @@ class ServerUDP {
     // Otherwise it will return null
     managePacket(packetBuffer) {
         try {
-            var packet = JSON.parse(packetBuffer.toString())
+            var packet = SnpPacket.fromBytes(packetBuffer);
+            // var packet = JSON.parse(packetBuffer.toString())
             let message = new TextDecoder().decode(new Uint8Array(packet.payloadData))
 
             packet.payloadData = message;

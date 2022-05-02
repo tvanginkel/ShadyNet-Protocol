@@ -7,8 +7,8 @@ const SnpPacket = require('./packet')
 // var port = 1502;
 // var address = '192.168.0.176';
 var port = 7788;
-// var address = '192.168.0.192';
-var address = 'localhost';
+var address = '192.168.0.192';
+// var address = 'localhost';
 class ClientUDP {
     constructor() {
         this.pendingPackets = new Map();
@@ -95,7 +95,7 @@ class ClientUDP {
                                 path,
                                 queryParameters,
                             },
-                            timeout: 1000
+                            timeout: 2000
                         }), this.client);
                     } catch (error) {
                         console.log(clc.red(error));
@@ -121,7 +121,6 @@ class ClientUDP {
                             body: {
                                 token
                             },
-                            timeout: 1000
                         }), this.client);
                     } catch (error) {
                         console.log(clc.red(error));

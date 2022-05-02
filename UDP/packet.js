@@ -47,8 +47,6 @@ class SnpPacket {
     }
 
     toBytes() {
-
-
         // Encrypt
         let strJSON = JSON.stringify(this.toJson())
         console.log(clc.blue("Encrypting data..."))

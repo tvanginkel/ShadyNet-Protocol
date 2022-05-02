@@ -5,8 +5,8 @@ const SnpPacket = require('./packet')
 var clc = require('cli-color');
 
 var port = 7788;
-var ip = 'localhost';
-// var ip = '192.168.0.192';
+// var ip = 'localhost';
+var ip = '192.168.0.192';
 
 function sendMessage(msg, port, address, server) {
 
@@ -138,9 +138,20 @@ class ServerUDP {
                 var url = message.body.path;
                 var method = message.body.method.toLowerCase();
                 var data = message.body.queryParameters;
-
+                var timeout = message.timeout;
+                const controller = new AbortController();
+                let isTimeout = false;
                 try {
-                    let response = await axios({ method, url, data });
+                    let response = null;
+
+                    setTimeout(() => {
+                        if (response === null) {
+                            controller.abort();
+                            isTimeout = true;
+                        }
+                    }, timeout);
+
+                    response = await axios({ method, url, data, signal: controller.signal });
 
                     sendMessage(JSON.stringify({
                         id: message.id,
@@ -160,15 +171,26 @@ class ServerUDP {
                     }), request.port, request.address, this.server)
 
                 } catch (error) {
-                    sendMessage(JSON.stringify({
-                        id: message.id,
-                        success: false,
-                        status: 405,
-                        payload: {
-                            error: 'INTERNAL_ERROR',
-                            message: 'Internal error',
-                        },
-                    }), request.port, request.address, this.server)
+                    if (isTimeout)
+                        sendMessage(JSON.stringify({
+                            id: message.id,
+                            success: false,
+                            status: 408,
+                            payload: {
+                                error: 'TIMEOUT_ERROR',
+                                message: 'Your request has timed out',
+                            },
+                        }), request.port, request.address, this.server)
+                    else
+                        sendMessage(JSON.stringify({
+                            id: message.id,
+                            success: false,
+                            status: 405,
+                            payload: {
+                                error: 'INTERNAL_ERROR',
+                                message: 'Internal error',
+                            },
+                        }), request.port, request.address, this.server)
                 }
             }
 

@@ -12,7 +12,7 @@ id = ''.join(random.choice(letters_digits) for i in range(8)) + "-"  +  ''.join(
 
 IP = socket.gethostbyname(socket.gethostname())
 HOST = 5151
-BUFFER_SIZE = 2048
+BUFFER_SIZE = 5000
 ADDRESS = (IP, HOST)
 FORMAT = 'utf-8'
 
@@ -90,9 +90,9 @@ def receiveRespond():
         respond = ServerResponse[0].decode(FORMAT)
         respond_json = json.loads(respond)
         if id not in respond_packets:
-                    respond_packets[id] = {respond_json['packetNumber']: respond_json['payloadData']}
+                    respond_packets[id] = {respond_json['packetNumber']: ''.join([chr(x) for x in respond_json['payloadData']])}
         else:
-                respond_packets[id][respond_json['packetNumber']] = respond_json['payloadData']
+                respond_packets[id][respond_json['packetNumber']] = ''.join([chr(x) for x in respond_json['payloadData']])
 
         if len(respond_packets[id]) == respond_json['totalPackets']:
                 reassembled = ''
@@ -108,7 +108,7 @@ def Request(request, UDPClientSocket):
         packet_list = textwrap.wrap(json_message, 1024)
     
         for i in range(len(packet_list)):
-            packet = {"id": id, "packetNumber": i+1, "totalPackets": len(packet_list), "payloadData": packet_list[i]}
+            packet = {"id": id, "packetNumber": i+1, "totalPackets": len(packet_list), "payloadData": [x for x in packet_list[i].encode()]}
             encodedpacket = json.dumps(packet).encode()
             UDPClientSocket.sendto(encodedpacket, ADDRESS)
 try:            

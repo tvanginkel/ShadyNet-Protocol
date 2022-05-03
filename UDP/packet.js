@@ -1,6 +1,8 @@
 var CryptoJS = require("crypto-js");
 var clc = require('cli-color');
 
+const encript = false;
+
 class SnpPacket {
     constructor(id, packetNumber, totalPackets, payloadData) {
         this.id = id;
@@ -26,33 +28,55 @@ class SnpPacket {
     }
 
     static fromBytes(buffer) {
+        if (encript) {
+            console.log(clc.yellow("Decrypting data..."))
 
-        console.log(clc.yellow("Decrypting data..."))
-
-        // Decrypt
-        var bytes = CryptoJS.AES.decrypt(buffer.toString(), 'snp');
-        var originalText = bytes.toString(CryptoJS.enc.Utf8);
-        // console.log(clc.yellow(originalText))
-        try {
-            let json = JSON.parse(originalText);
-            return {
-                id: json.id,
-                packetNumber: json.packetNumber,
-                totalPackets: json.totalPackets,
-                payloadData: json.payloadData
-            };
-        } catch (error) {
-            console.log(error);
+            // Decrypt
+            var bytes = CryptoJS.AES.decrypt(buffer.toString(), 'snp');
+            var originalText = bytes.toString(CryptoJS.enc.Utf8);
+            // console.log(clc.yellow(originalText))
+            try {
+                let json = JSON.parse(originalText);
+                return {
+                    id: json.id,
+                    packetNumber: json.packetNumber,
+                    totalPackets: json.totalPackets,
+                    payloadData: json.payloadData
+                };
+            } catch (error) {
+                console.log(error);
+            }
+        }
+        else {
+            try {
+                let json = JSON.parse(buffer.toString());
+                return {
+                    id: json.id,
+                    packetNumber: json.packetNumber,
+                    totalPackets: json.totalPackets,
+                    payloadData: json.payloadData
+                };
+            } catch (error) {
+                console.log(clc.red("Error trying to json the packet"));
+                console.log(error);
+            }
         }
     }
 
     toBytes() {
-        // Encrypt
-        let strJSON = JSON.stringify(this.toJson())
-        console.log(clc.blue("Encrypting data..."))
-        var ciphertext = CryptoJS.AES.encrypt(strJSON, 'snp').toString();
-        // console.log(clc.blue(ciphertext), '\n')
-        return Buffer.from(ciphertext);
+        if (encript) {
+            // Encrypt
+
+            console.log(clc.blue("Encrypting data..."))
+            var ciphertext = CryptoJS.AES.encrypt(strJSON, 'snp').toString();
+            // console.log(clc.blue(ciphertext), '\n')
+
+        }
+        else {
+            let strJSON = JSON.stringify(this.toJson())
+            return Buffer.from(strJSON);
+        }
+
     }
 }
 

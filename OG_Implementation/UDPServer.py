@@ -6,8 +6,8 @@ import textwrap
 IP = socket.gethostbyname(socket.gethostname())
 HOST = 5151
 BUFFER_SIZE = 1024
-ADDRESS = (IP, HOST)
-authtoken = 'og00209' 
+ADDRESS = ('localhost', HOST)
+authtoken = 'a' 
 
 
 UDPServer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -21,7 +21,7 @@ def Respond(respond, UDPServer):
         packet_list = textwrap.wrap(json_respond, 1024)
 
         for i in range(len(packet_list)):
-            respond_packet = {"id": respond['id'], "packetNumber": i+1, "totalPackets": len(packet_list), "payloadData": packet_list[i]}
+            respond_packet = {"id": respond['id'], "packetNumber": i+1, "totalPackets": len(packet_list), "payloadData": [x for x in packet_list[i].encode()]}
             encodedpacket = json.dumps(respond_packet).encode()
             UDPServer.sendto(encodedpacket, address)
 
@@ -52,7 +52,7 @@ def Auth(request_json, address):
 def HTTPRequest(request_json, address): 
 
         try:
-                if(request_json['type'] == None or request_json['body']['path'] == None or request_json['body']['Timeout'] == None):
+                if(request_json['type'] == None or request_json['body']['path'] == None or request_json['timeout'] == None):
                         return None
                         
         except KeyError as e:
@@ -65,7 +65,7 @@ def HTTPRequest(request_json, address):
                 if(request_json['body']['method'] == 'GET'):
                         try:
                                         
-                                r = requests.get(request_json['body']['path'], timeout = request_json['body']['Timeout'])
+                                r = requests.get(request_json['body']['path'], timeout = request_json['timeout'])
                                 
                                 if(r.status_code == requests.codes.ok):
                                         success = True
@@ -100,7 +100,7 @@ def HTTPRequest(request_json, address):
 
                         try:
 
-                                r = requests.post(request_json['body']['path'], data = request_json['body']['body']['username'] , timeout = request_json['body']['Timeout'])
+                                r = requests.post(request_json['body']['path'], data = request_json['body']['body']['username'] , timeout = request_json['timeout'])
                                 
                                 if(r.status_code == requests.codes.ok):
                                         success = True
@@ -139,7 +139,7 @@ def HTTPRequest(request_json, address):
                                         no_request_json = {'id': request_json['id'], 'success': False, 'Status': 403, 'payload': { 'content': {'ERROR': 'UNAUTHORISED_REQUEST', 'message': 'You have reached your request limit' }}}
                                         Respond(no_request_json, UDPServer)
                                 else:
-                                        r = requests.get(request_json['body']['path'], timeout = request_json['body']['Timeout'])
+                                        r = requests.get(request_json['body']['path'], timeout = request_json['timeout'])
                                         
                                         if(r.status_code == requests.codes.ok):
                                                 success = True
@@ -165,10 +165,10 @@ def HTTPRequest(request_json, address):
                                 internalerr_json = {'id': request_json['id'], 'status': 405,  'success': False, 'payload': { 'content': { 'error': 'INTERNAL_SERVER_ERROR', 'message': 'There was a problem when processing your request.'}}}
                                 Respond(internalerr_json, UDPServer)
 
-                        except TypeError as e:
+                        """except TypeError as e:
                                 print(f'There is a type error: {e}')
                                 internalerr_json = {'id': request_json['id'], 'status': 405,  'success': False, 'payload': { 'content': { 'error': 'INTERNAL_SERVER_ERROR', 'message': 'There was a problem when processing your request.'}}}
-                                Respond(internalerr_json, UDPServer)
+                                Respond(internalerr_json, UDPServer)"""
 
                 
                 elif(request_json['body']['method'] == 'POST'):
@@ -178,7 +178,7 @@ def HTTPRequest(request_json, address):
                                         no_request_json = {'id': request_json['id'], 'success': False, 'Status': 403, 'payload': { 'content': {'ERROR': 'UNAUTHORISED_REQUEST', 'message': 'You have reached your request limit' }}}
                                         Respond(no_request_json, UDPServer)
                                 else:
-                                        r = requests.post(request_json['body']['path'], data = request_json['body']['body']['username'] , timeout = request_json['body']['Timeout'])
+                                        r = requests.post(request_json['body']['path'], data = request_json['body']['body']['username'] , timeout = request_json['timeout'])
                                         
                                         if(r.status_code == requests.codes.ok):
                                                 success = True
@@ -239,17 +239,17 @@ try:
                                 nonauthClient[address]['requests'] -= 1
 
                         if id not in packets:
-                                packets[id] = {request_json['packetNumber']: request_json['payloadData']}
+                                packets[id] = {request_json['packetNumber']: ''.join([chr(x) for x in request_json['payloadData']])}
                         else:
-                                packets[id][request_json['packetNumber']] = request_json['payloadData']
-                        
+                                packets[id][request_json['packetNumber']] = ''.join([chr(x) for x in request_json['payloadData']])
+                                
                         
                         if len(packets[id]) == request_json['totalPackets']:
                                 reassembled = ''
                                 for i in range(len(packets[id])):
                                         reassembled += packets[id][i+1]
                                 print(f'REASSEMBLED PACKET: {reassembled}')
-
+                                
                                 request = json.loads(reassembled)
                                 
                                 if(request['type'] == 'AUTH'):
@@ -267,15 +267,15 @@ try:
                         internalerr_json = {'id': request_json['id'], 'status': 405,  'success': False, 'payload': { 'content': { 'error': 'INTERNAL_SERVER_ERROR', 'message': 'There was a problem when processing your request.'}}}
                         Respond(internalerr_json, UDPServer)
 
-                except TypeError as e:
+                """except TypeError as e:
                         print(f'There is a type error: {e}')
                         internalerr_json = {'id': request_json['id'], 'status': 405,  'success': False, 'payload': { 'content': { 'error': 'INTERNAL_SERVER_ERROR', 'message': 'There was a problem when processing your request.'}}}
-                        Respond(internalerr_json, UDPServer)
+                        Respond(internalerr_json, UDPServer)"""
                         
-                except KeyError as e:
+                """ except KeyError as e:
                         print(f'There is a key error: {e}')
                         internalerr_json = {'id': request_json['id'], 'status': 405,  'success': False, 'payload': { 'content': { 'error': 'INTERNAL_SERVER_ERROR', 'message': 'There was a problem when processing your request.'}}}
-                        Respond(internalerr_json, UDPServer)
+                        Respond(internalerr_json, UDPServer)"""
 
 except socket.timeout:
         print('Server Timeout.')

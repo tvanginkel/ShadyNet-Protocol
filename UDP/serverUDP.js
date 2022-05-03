@@ -5,8 +5,8 @@ const SnpPacket = require('./packet')
 var clc = require('cli-color');
 
 var port = 7788;
-// var ip = 'localhost';
-var ip = '192.168.0.192';
+var ip = 'localhost';
+// var ip = '192.168.0.192';
 
 function sendMessage(msg, port, address, server) {
 

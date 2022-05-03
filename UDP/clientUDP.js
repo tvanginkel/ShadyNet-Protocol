@@ -6,9 +6,10 @@ const SnpPacket = require('./packet')
 
 // var port = 1502;
 // var address = '192.168.0.176';
-var port = 7788;
-var address = '192.168.0.192';
-// var address = 'localhost';
+// var port = 7788;
+var port = 5151;
+// var address = '192.168.0.192';
+var address = 'localhost';
 class ClientUDP {
     constructor() {
         this.pendingPackets = new Map();
@@ -16,7 +17,9 @@ class ClientUDP {
 
         this.client.on('message', (msg, info) => {
             try {
+
                 var packet = SnpPacket.fromBytes(msg.toString());
+                console.log(packet)
                 let message = new TextDecoder().decode(new Uint8Array(packet.payloadData))
                 packet.payloadData = message;
                 // If it is a single packet and we are not expecting any more then just print the result
@@ -138,7 +141,7 @@ class ClientUDP {
                     await this.sendToServer(JSON.stringify({
                         id: uuidv4(),
                         type: type,
-                        timeout: 1000
+
                     }), this.client);
                     this.client.close();
                     rl.close();

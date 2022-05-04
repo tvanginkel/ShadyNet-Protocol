@@ -6,8 +6,8 @@ const SnpPacket = require('./packet')
 
 // var port = 1502;
 // var address = '192.168.0.176';
-// var port = 7788;
-var port = 5151;
+var port = 7788;
+// var port = 5151;
 // var address = '192.168.0.192';
 var address = 'localhost';
 class ClientUDP {
@@ -19,7 +19,7 @@ class ClientUDP {
             try {
 
                 var packet = SnpPacket.fromBytes(msg.toString());
-                console.log(packet)
+                // console.log(packet)
                 let message = new TextDecoder().decode(new Uint8Array(packet.payloadData))
                 packet.payloadData = message;
                 // If it is a single packet and we are not expecting any more then just print the result

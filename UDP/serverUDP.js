@@ -5,6 +5,7 @@ const SnpPacket = require('./packet')
 var clc = require('cli-color');
 
 var port = 7788;
+// var port = 5151;
 var ip = 'localhost';
 // var ip = '192.168.0.192';
 
@@ -37,6 +38,8 @@ function sendMessage(msg, port, address, server) {
 
 class ServerUDP {
     constructor() {
+
+        this.validTokens = ['a', 'toni', 'token']
         // A map with the packets yet to be completed
         this.pendingPackets = new Map();
 
@@ -79,7 +82,11 @@ class ServerUDP {
                     success: true,
                     status: 201,
                     payload: {
-                        queue: this.queue.indexOf(request)
+                        content: {
+                            queue: this.queue.indexOf(request),
+                            message: "What the ACK"
+                        }
+
                     }
                 }), info.port, info.address, this.server)
 
@@ -177,8 +184,11 @@ class ServerUDP {
                             success: false,
                             status: 408,
                             payload: {
-                                error: 'TIMEOUT_ERROR',
-                                message: 'Your request has timed out',
+                                content: {
+                                    error: 'TIMEOUT_ERROR',
+                                    message: 'Your request has timed out',
+                                }
+
                             },
                         }), request.port, request.address, this.server)
                     else
@@ -187,8 +197,11 @@ class ServerUDP {
                             success: false,
                             status: 405,
                             payload: {
-                                error: 'INTERNAL_ERROR',
-                                message: 'Internal error',
+                                content: {
+                                    error: 'INTERNAL_ERROR',
+                                    message: 'Internal error',
+                                }
+
                             },
                         }), request.port, request.address, this.server)
                 }
@@ -201,8 +214,11 @@ class ServerUDP {
                     success: false,
                     status: 403,
                     payload: {
-                        error: 'UNAUTHORIZED',
-                        message: 'No requests left to make',
+                        content: {
+                            error: 'UNAUTHORIZED',
+                            message: 'No requests left to make',
+                        }
+
                     }
                 }), request.port, request.address, this.server)
             }
@@ -225,28 +241,56 @@ class ServerUDP {
                     success: false,
                     status: 400,
                     payload: {
-                        error: 'BAD_REQUEST',
-                        message: 'Incorrect properties in request',
+                        content: {
+                            error: 'BAD_REQUEST',
+                            message: 'Incorrect properties in request'
+                        }
                     }
                 }), request.port, request.address, this.server)
             }
-            // Authenticate the user
+
             else {
-                this.isAuthenticated = true;
-                if (!this.authenticatedIPS.includes(request.address))
-                    this.authenticatedIPS.push(request.address);
+                // Authenticate the user
+                if (this.validTokens.includes(message.body.token)) {
+                    this.isAuthenticated = true;
 
-                if (this.unAuthenticatedIPs.has(request.address))
-                    this.unAuthenticatedIPs.delete(request.address);
+                    // Add user to authenticated IPs
+                    if (!this.authenticatedIPS.includes(request.address))
+                        this.authenticatedIPS.push(request.address);
 
-                sendMessage(JSON.stringify({
-                    id: message.id,
-                    success: true,
-                    status: 200,
-                    payload: {
-                        message: 'Authentication successful',
-                    }
-                }), request.port, request.address, this.server)
+                    // Delete user from unAuthenticated IPs
+                    if (this.unAuthenticatedIPs.has(request.address))
+                        this.unAuthenticatedIPs.delete(request.address);
+                    sendMessage(JSON.stringify({
+                        id: message.id,
+                        success: true,
+                        status: 200,
+                        payload: {
+                            content: {
+                                message: 'Authentication successful',
+                            }
+
+                        }
+                    }), request.port, request.address, this.server)
+                }
+
+                else {
+                    sendMessage(JSON.stringify({
+                        id: message.id,
+                        success: false,
+                        status: 401,
+                        payload: {
+                            content: {
+                                error: "UNAUTHENTICATED_TOKEN",
+                                message: 'Could not authenticate using your authentication token'
+                            }
+
+                        }
+                    }), request.port, request.address, this.server)
+                }
+
+
+
             }
         }
 
@@ -257,8 +301,11 @@ class ServerUDP {
                 success: false,
                 status: 400,
                 payload: {
-                    error: 'BAD_REQUEST',
-                    message: 'Incorrect properties in request',
+                    content: {
+                        error: 'BAD_REQUEST',
+                        message: 'Incorrect properties in request',
+                    }
+
                 }
             }), request.port, request.address, this.server)
         }

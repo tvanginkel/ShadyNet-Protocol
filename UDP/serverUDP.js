@@ -4,8 +4,8 @@ const Request = require('./requests');
 const SnpPacket = require('./packet')
 var clc = require('cli-color');
 
-var port = 7788;
-// var port = 5151;
+// var port = 7788;
+var port = 5151;
 var ip = 'localhost';
 // var ip = '192.168.0.192';
 
@@ -15,7 +15,7 @@ function sendMessage(msg, port, address, server) {
 
     //sending msg to the client
     var response = Buffer.from(msg);
-    console.log(response.byteLength);
+    console.log("Response length in bytes: ", response.byteLength);
 
     var chunks = [];
     i = 0;
@@ -28,6 +28,9 @@ function sendMessage(msg, port, address, server) {
 
     for (let i = 0; i < chunks.length; i++) {
         let snpPacket = new SnpPacket(message.id, i + 1, chunks.length, chunks[i].toJSON().data)
+        if (i == 0) {
+            console.log("Structure of packet: ", snpPacket)
+        }
         server.send(snpPacket.toBytes(), port, address, function (error) {
             if (error) {
                 console.log('\x1b[31m\x1b[0m', error);

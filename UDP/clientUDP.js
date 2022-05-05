@@ -6,8 +6,8 @@ const SnpPacket = require('./packet')
 
 // var port = 1502;
 // var address = '192.168.0.176';
-var port = 7788;
-// var port = 5151;
+// var port = 7788;
+var port = 5151;
 // var address = '192.168.0.192';
 var address = 'localhost';
 class ClientUDP {
@@ -35,15 +35,18 @@ class ClientUDP {
 
                     // If this was the last packet missing then put them togheter
                     if (packets.length == packet.totalPackets) {
+                        // console.log(`Received all packets, now putting them together`);
                         let finalMessage = "";
                         for (let i = 0; i < packets.length; i++) {
                             finalMessage += packets[i].payloadData;
                         }
-                        // console.log(finalMessage)
-                        console.log(JSON.parse(finalMessage));
+
+                        console.log("Final message:");
+                        console.log(JSON.parse(finalMessage))
                     }
                     // Otherwise just add it to the list
                     else {
+                        // console.log(`Received packet number ${packet.packetNumber} out of ${packet.totalPackets}, waiting for the rest`)
                         this.pendingPackets.set(packet.id, packets);
                     }
                 }
@@ -51,6 +54,7 @@ class ClientUDP {
                 // If this is the first time we get a package and we are expecting more, create and entry in the map 
                 // with the id of the response and add it to the list.
                 else if (!this.pendingPackets.has(packet.id)) {
+                    console.log(`Received the first packet ${packet.packetNumber} out of ${packet.totalPackets}, waiting for the rest`)
                     this.pendingPackets.set(packet.id, new Array())
                     let arr = this.pendingPackets.get(packet.id)
                     arr[packet.packetNumber - 1] = packet
@@ -86,26 +90,19 @@ class ClientUDP {
                 if (!this.isEmpty(words[3]))
                     queryParameters = JSON.parse(words[3]);
 
-
-                // Check the amount of arguments is correct
-                if (!this.isEmpty(path) || !this.isEmpty(method)) {
-                    try {
-                        await this.sendToServer(JSON.stringify({
-                            type,
-                            id: uuidv4(),
-                            body: {
-                                method,
-                                path,
-                                queryParameters,
-                            },
-                            timeout: 2000
-                        }), this.client);
-                    } catch (error) {
-                        console.log(clc.red(error));
-                    }
-
-                } else {
-                    console.log(clc.red("Wrong arguments"))
+                try {
+                    await this.sendToServer(JSON.stringify({
+                        type,
+                        id: uuidv4(),
+                        body: {
+                            method,
+                            path,
+                            queryParameters,
+                        },
+                        timeout: 2000
+                    }), this.client);
+                } catch (error) {
+                    console.log(clc.red(error));
                 }
             }
 
@@ -115,24 +112,16 @@ class ClientUDP {
                 // Get arguments
                 let token = words[1]
 
-                // Check the amount of arguments is correct
-                if (token != null) {
-                    try {
-                        await this.sendToServer(JSON.stringify({
-                            id: uuidv4(),
-                            type: type,
-                            body: {
-                                token
-                            },
-                        }), this.client);
-                    } catch (error) {
-                        console.log(clc.red(error));
-                    }
-
-                }
-                // Don't send message and output error
-                else {
-                    console.log(clc.red("Wrong arguments"))
+                try {
+                    await this.sendToServer(JSON.stringify({
+                        id: uuidv4(),
+                        type: type,
+                        body: {
+                            token
+                        },
+                    }), this.client);
+                } catch (error) {
+                    console.log(clc.red(error));
                 }
 
             }

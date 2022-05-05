@@ -79,6 +79,10 @@ def Send():
 
     else:
         print('Type should be either "SEND" or "AUTH".')
+        send_getrequest = {'id': id, 'type': type}
+        Request(send_getrequest, UDPClientSocket)
+        receiveRespond()
+        receiveRespond()
         return
             
 def receiveRespond():
